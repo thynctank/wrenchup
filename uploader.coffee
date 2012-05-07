@@ -15,7 +15,7 @@ class Uploader
     timestamp = new Date().getTime()
     filename = "#{dirname}/#{timestamp}"
     origName = req.files[fieldName].path
-    clientPath = "#{subdir}/filename"
+    clientPath = "#{subdir}/#{timestamp}"
 
     wrench.mkdirSyncRecursive dirname, 0777
     fs.rename origName, filename, ->
