@@ -15,8 +15,10 @@ class Uploader
     timestamp = new Date().getTime()
     filename = "#{dirname}/#{timestamp}"
     origName = req.files[fieldName].path
+    clientPath = "#{subdir}/filename"
 
     wrench.mkdirSyncRecursive dirname, 0777
-    fs.rename origName, filename, cb
+    fs.rename origName, filename, ->
+      cb(clientPath)
 
 module.exports = Uploader
