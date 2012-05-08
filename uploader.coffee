@@ -1,6 +1,8 @@
 wrench = require 'wrench'
 fs = require 'fs'
-chain = require 'chain-gang'
+chainGang = require 'chain-gang'
+
+chain = chainGang.create workers: 3
 
 class Uploader
   #factory
@@ -18,17 +20,21 @@ class Uploader
     #allow single string passed in for one field
     fields = [fields] if !fields.indexOf
 
+    cb("no fields") if !fields.length
+
+    clientPaths = []
+
     for fieldName in fields
       chain.add (job) ->
         try
           timestamp = new Date().getTime()
           filename = "#{dirname}/#{timestamp}"
           origName = req.files[fieldName].path
-          clientPath = "#{subdir}/#{timestamp}"
+          clientPaths.push "#{subdir}/#{timestamp}"
 
           fs.rename origName, filename
         catch error
 
     chain.on 'empty', ->
-      cb(clientPath)
+      cb(null, clientPaths)
 module.exports = Uploader
