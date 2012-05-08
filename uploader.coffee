@@ -18,13 +18,14 @@ class Uploader
     wrench.mkdirSyncRecursive dirname, 0777
 
     #allow single string passed in for one field
-    fields = [fields] if !fields.indexOf
+    fields = [fields] if not Array.isArray(fields)
 
-    cb("no fields") if !fields.length
+    cb("no fields") if fields.length < 1
 
     clientPaths = []
 
     for fieldName in fields
+      fields.splice fields.indexOf(fieldName), 1
       chain.add (job) ->
         try
           timestamp = new Date().getTime()
@@ -32,9 +33,9 @@ class Uploader
           origName = req.files[fieldName].path
           clientPaths.push "#{subdir}/#{timestamp}"
 
-          fs.rename origName, filename
+          fs.rename origName, filename, ->
+            cb(null, clientPaths) if fields.length is 0
+            job.finish()
         catch error
 
-    chain.on 'empty', ->
-      cb(null, clientPaths)
 module.exports = Uploader
