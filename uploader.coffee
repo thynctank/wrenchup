@@ -1,8 +1,6 @@
 wrench = require 'wrench'
 fs = require 'fs'
-chainGang = require 'chain-gang'
-
-chain = chainGang.create workers: 3
+async = require 'async'
 
 class Uploader
   #factory
@@ -20,22 +18,24 @@ class Uploader
     #allow single string passed in for one field
     fields = [fields] if not Array.isArray(fields)
 
-    cb("no fields") if fields.length < 1
-
     clientPaths = []
 
-    for fieldName in fields
-      fields.splice fields.indexOf(fieldName), 1
-      chain.add (job) ->
-        try
-          timestamp = new Date().getTime()
-          filename = "#{dirname}/#{timestamp}"
-          origName = req.files[fieldName].path
-          clientPaths.push "#{subdir}/#{timestamp}"
+    #setup enough workers for the number of fields
+    q = async.queue (fieldName, cb2) ->
+      field = req.files[fieldName]
+      origName = field.name
+      origPath = field.path
+      filename = "#{dirname}/#{origName}"
+      clientPaths.push "#{subdir}/#{origName}"
 
-          fs.rename origName, filename, ->
-            cb(null, clientPaths) if fields.length is 0
-            job.finish()
-        catch error
+      fs.rename origPath, filename, cb2
+    , fields.length
+    
+    #what happens when the queue is empty
+    q.drain = ->
+      cb(clientPaths)
 
+    #queue up all the fields
+    q.push fieldName for fieldName in fields
+ 
 module.exports = Uploader
